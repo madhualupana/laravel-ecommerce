@@ -3,34 +3,208 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Order;
+use App\Models\OrderItem;
+use Cart;
+use Stripe\Stripe;
+use Stripe\PaymentIntent;
+use Srmklive\PayPal\Services\PayPal as PayPalClient;
 
 class CheckoutController extends Controller
 {
     public function show()
     {
-        if (\Cart::count() === 0) {
+        if (Cart::count() === 0) {
             return redirect()->route('cart.index')->with('error', 'Your cart is empty');
         }
 
-        return view('checkout');
+        $amount = (float) str_replace(['$', ','], '', Cart::total());
+        
+        // For Stripe integration
+        Stripe::setApiKey(config('services.stripe.secret'));
+        $intent = PaymentIntent::create([
+            'amount' => round($amount * 100),
+            'currency' => 'usd',
+        ]);
+
+        return view('checkout', [
+            'clientSecret' => $intent->client_secret,
+            'stripeKey' => config('services.stripe.key'),
+            'paymentIntentId' => $intent->id
+        ]);
     }
 
     public function process(Request $request)
-    {
+    { 
+        $request->validate([
+            'name' => 'required',
+            'address' => 'required',
+            'city' => 'required',
+            'zip' => 'required',
+            'payment_method' => 'required'
+        ]);
 
-        dd($request);
-        // Add your checkout logic here
-        // Process payment, create order, etc.
+        $paymentMethod = $request->payment_method;
+
+        try {
+            // Create order record
+            $order = Order::create([
+                'user_id' => auth()->id(),
+                'name' => $request->name,
+                'address' => $request->address,
+                'city' => $request->city,
+                'zip' => $request->zip,
+                'total' => (float) str_replace(['$', ','], '', Cart::total()),
+                'payment_method' => $paymentMethod,
+                'status' => $paymentMethod === 'cod' ? 'pending' : 'processing',
+                'transaction_id' => $paymentMethod === 'stripe' ? $request->payment_intent : null
+            ]);
+
+           
+
+            // Add order items
+            foreach (Cart::content() as $item) {
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_id' => $item->id,
+                    'price' => $item->price,
+                    'quantity' => $item->qty,
+                    'options' => json_encode($item->options)
+                ]);
+            }
+
+            // Handle different payment methods
+            switch ($paymentMethod) {
+                case 'cod':
+                    Cart::destroy();
+                    return redirect()->route('checkout.success')->with('order', $order);
+
+                case 'stripe':
+                    $order->update(['status' => 'completed']);
+                    Cart::destroy();
+                    return redirect()->route('checkout.success')->with('order', $order);
+
+                case 'paypal':
+                    
+                    return $this->processPaypalPayment($order);
+            }
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error processing order: ' . $e->getMessage());
+        }
+    }
+
+    protected function processPaypalPayment($order)
+{
+    try {
+        $provider = new PayPalClient;
+        $provider->setApiCredentials(config('services.paypal'));
         
-        return redirect()->route('checkout.success')->with('success', 'Order placed successfully!');
+        // Verify credentials exist
+        $config = config('services.paypal');
+        if (empty($config['sandbox']['client_id']) || empty($config['sandbox']['client_secret'])) {
+            throw new \Exception('PayPal sandbox credentials not configured');
+        }
+
+        $token = $provider->getAccessToken();
+        $provider->setAccessToken($token);
+
+        $response = $provider->createOrder([
+            "intent" => "CAPTURE",
+            "application_context" => [
+                "return_url" => route('checkout.paypal.success'),
+                "cancel_url" => route('checkout.paypal.cancel'),
+                "brand_name" => config('app.name'),
+                "user_action" => "PAY_NOW"
+            ],
+            "purchase_units" => [
+                [
+                    "amount" => [
+                        "currency_code" => $config['currency'],
+                        "value" => number_format($order->total, 2, '.', '')
+                    ],
+                    "reference_id" => 'order_'.$order->id,
+                    "description" => "Order #".$order->id
+                ]
+            ]
+        ]);
+
+        if (isset($response['error'])) {
+            throw new \Exception($response['error']['message'] ?? 'PayPal API error');
+        }
+
+        if (isset($response['id']) && $response['id'] != null) {
+            foreach ($response['links'] as $link) {
+                if ($link['rel'] === 'approve') {
+                    return redirect()->away($link['href']);
+                }
+            }
+        }
+
+        throw new \Exception('No approval link found in PayPal response');
+
+    } catch (\Exception $e) {
+        \Log::error('PayPal Payment Error: '.$e->getMessage());
+        return back()
+            ->with('error', 'PayPal Error: ' . $e->getMessage())
+            ->withInput();
+    }
+}
+    
+    public function paypalSuccess(Request $request)
+    {
+        try {
+            if (!$request->has('token')) {
+                throw new \Exception('Missing payment token');
+            }
+    
+            $provider = new PayPalClient;
+            $provider->setApiCredentials(config('services.paypal'));
+            $token = $provider->getAccessToken();
+            $provider->setAccessToken($token);
+    
+            $response = $provider->capturePaymentOrder($request->token);
+    
+            if (isset($response['error'])) {
+                throw new \Exception($response['error']['message'] ?? 'PayPal API error');
+            }
+    
+            if (isset($response['status']) && $response['status'] === 'COMPLETED') {
+                $orderId = str_replace('order_', '', $response['purchase_units'][0]['reference_id']);
+                $order = Order::find($orderId);
+                
+                if (!$order) {
+                    throw new \Exception('Order not found');
+                }
+    
+                $order->update([
+                    'status' => 'completed',
+                    'transaction_id' => $response['id']
+                ]);
+                
+                Cart::destroy();
+                return redirect()->route('checkout.success')->with('order', $order);
+            }
+    
+            throw new \Exception('Payment not completed: ' . ($response['status'] ?? 'unknown status'));
+    
+        } catch (\Exception $e) {
+            return redirect()->route('checkout')
+                ->with('error', 'Payment failed: ' . $e->getMessage());
+        }
+    }
+
+    public function paypalCancel()
+    {
+        return redirect()->route('checkout')->with('error', 'Payment was cancelled');
     }
 
     public function success()
     {
-        if (!session()->has('success')) {
+        if (!session()->has('order')) {
             return redirect()->route('home');
         }
 
-        return view('checkout.success');
+        return view('checkout.success', ['order' => session('order')]);
     }
 }

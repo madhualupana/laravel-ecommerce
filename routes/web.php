@@ -6,6 +6,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\LogoutController;
@@ -66,6 +67,12 @@ Route::get('/checkout/success', [CheckoutController::class, 'success'])
 Route::middleware('auth')->group(function () {
         Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     });
+
+Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+
+// PayPal Routes
+Route::get('/paypal/success', [CheckoutController::class, 'paypalSuccess'])->name('checkout.paypal.success');
+Route::get('/paypal/cancel', [CheckoutController::class, 'paypalCancel'])->name('checkout.paypal.cancel');
 
 Route::middleware('auth')->get('/profile', [ProfileController::class, 'show'])->name('profile');
 // Optional default auth routes (if you're still using Laravel UI)
