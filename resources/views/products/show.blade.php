@@ -117,7 +117,7 @@
                             </svg>
                             Add to Cart
                         </button>
-                    </div>
+                    </div> 
                     
                     <div class="flex space-x-4 mb-6">
                         <button class="flex items-center text-gray-600 hover:text-primary-600">
@@ -283,7 +283,10 @@
             <h2 class="text-2xl font-bold mb-6">You may also like</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 @foreach($relatedProducts as $product)
-                    @livewire('product-card', ['product' => $product], key($product->id))
+                @livewire('product-card', [
+    'product' => $product,
+    'showAddToCart' => true
+], key('product-' . $product->id))
                 @endforeach
             </div>
         </div>

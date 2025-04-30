@@ -12,15 +12,25 @@ class ProductCard extends Component
     public $product;
     public $showAddToCart = true;
 
-    public function mount(Product $product, $showAddToCart = true)
+    
+
+    public function mount($product, $showAddToCart = true)
     {
-        $this->product = $product;
+        // Handle both Product object and array input
+        $this->product = is_array($product) ? (object)$product : $product;
         $this->showAddToCart = $showAddToCart;
     }
 
+
+     
+
+   
+
     public function addToCart()
     {
-        Cart::add([
+
+
+        \Cart::add([
             'id' => $this->product->id,
             'name' => $this->product->name,
             'price' => $this->product->price,
@@ -32,6 +42,13 @@ class ProductCard extends Component
         ]);
 
         $this->dispatch('cartUpdated');
+        
+        // Updated to use dispatch() instead of dispatchBrowserEvent()
+        $this->dispatch('notify', 
+            message: 'Product added to cart!',
+            productName: $this->product->name,
+            productImage: $this->product->image
+        );
     }
 
     public function render()

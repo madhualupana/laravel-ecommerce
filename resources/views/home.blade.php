@@ -15,7 +15,7 @@
             @foreach($categories as $category)
                 <a href="{{ route('categories.show', $category) }}" class="group block overflow-hidden rounded-lg shadow-md hover:shadow-lg transition duration-300">
                     <div class="relative h-40 bg-gray-100">
-                        <img src="{{ $category->image ?? 'https://placehold.co/300' }}" alt="{{ $category->name }}" class="w-full h-full object-cover">
+                        <img src=" {{ asset('/category/' . $category->image) ?? 'https://placehold.co/300' }}" alt="{{ $category->name }}" class="w-full h-full object-cover">
                         <div class="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
                             <h3 class="text-white font-semibold text-lg group-hover:text-primary-400 transition duration-300">{{ $category->name }}</h3>
                         </div>
