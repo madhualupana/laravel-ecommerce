@@ -31,7 +31,6 @@
 
     @stack('scripts')
     @livewireScripts
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <div x-data="{ 
         show: false, 
         message: '', 
@@ -52,7 +51,9 @@
     class="fixed bottom-4 right-4 z-50 w-80">
     <div class="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
         <div class="flex p-4">
-            <img :src="productImage" class="h-12 w-12 object-cover rounded" :alt="productName">
+        <img :src="productImage.startsWith('http') ? productImage : ('/storage/' + productImage)" 
+     class="h-12 w-12 object-cover rounded" 
+     :alt="productName">
             <div class="ml-3 flex-1">
                 <p class="text-sm font-medium text-gray-900" x-text="message"></p>
                 <p class="text-sm text-gray-500" x-text="productName"></p>

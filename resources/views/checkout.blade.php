@@ -22,10 +22,6 @@
                             <label for="cod" class="ml-3 block text-sm font-medium text-gray-700">Cash on Delivery</label>
                         </div>
                         <div class="flex items-center">
-                            <input id="credit-card" name="payment" type="radio"  class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300">
-                            <label for="credit-card" class="ml-3 block text-sm font-medium text-gray-700">Credit Card</label>
-                        </div>
-                        <div class="flex items-center">
                             <input id="paypal" name="payment" type="radio" class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300">
                             <label for="paypal" class="ml-3 block text-sm font-medium text-gray-700">PayPal</label>
                         </div>

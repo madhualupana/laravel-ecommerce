@@ -1,4 +1,4 @@
-<nav class="bg-white shadow-lg">
+<nav class="bg-white shadow-lg" x-data="{ mobileMenuOpen: false }">
     <div class="container mx-auto px-4">
         <div class="flex justify-between items-center py-4">
             <!-- Logo -->

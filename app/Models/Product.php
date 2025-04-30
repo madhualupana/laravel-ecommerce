@@ -39,4 +39,13 @@ class Product extends Model
         }
         return 0;
     }
+
+    public function getImageUrlAttribute()
+    {
+        if (str_starts_with($this->image, 'http')) {
+            return $this->image;
+        }
+        
+        return asset('storage/' . ltrim($this->image, '/'));
+    }
 }

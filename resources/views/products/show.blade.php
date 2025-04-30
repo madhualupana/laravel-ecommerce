@@ -3,19 +3,24 @@
 @section('title', $product->name)
 
 @section('content')
-@livewire('product-detail', ['product' => $product])
-
-
- 
+    <div class="container mx-auto px-4 py-8">
+        <!-- Main Product Detail -->
+        <livewire:product-card
+            :product="$product"
+            viewType="detail"
+            :key="'product-detail-'.$product->id"
+        />
+        
         <!-- Related Products -->
         <div class="mt-12">
             <h2 class="text-2xl font-bold mb-6">You may also like</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 @foreach($relatedProducts as $product)
-                @livewire('product-card', [
-    'product' => $product,
-    'showAddToCart' => true
-], key('product-' . $product->id))
+                    <livewire:product-card
+                        :product="$product" 
+                        viewType="card"
+                        :key="'related-product-'.$product->id"
+                    />
                 @endforeach
             </div>
         </div>
@@ -72,7 +77,7 @@
                 
                 // Style active tab
                 tab.classList.add('border-primary-500', 'text-primary-600');
-                tab.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                    tab.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
             });
         });
     </script>
