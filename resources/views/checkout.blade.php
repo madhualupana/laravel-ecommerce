@@ -17,13 +17,22 @@
                 <div class="mt-6 border-t border-gray-200 pt-4">
                     <h3 class="text-lg font-medium mb-2">Payment Method</h3>
                     <div class="space-y-3">
+                    <div class="flex items-center">
+                            <input id="cod" name="payment" type="radio" checked class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300">
+                            <label for="cod" class="ml-3 block text-sm font-medium text-gray-700">Cash on Delivery</label>
+                        </div>
                         <div class="flex items-center">
-                            <input id="credit-card" name="payment" type="radio" checked class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300">
+                            <input id="credit-card" name="payment" type="radio"  class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300">
                             <label for="credit-card" class="ml-3 block text-sm font-medium text-gray-700">Credit Card</label>
                         </div>
                         <div class="flex items-center">
                             <input id="paypal" name="payment" type="radio" class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300">
                             <label for="paypal" class="ml-3 block text-sm font-medium text-gray-700">PayPal</label>
+                        </div>
+
+                        <div class="flex items-center">
+                            <input id="stripe" name="payment" type="radio" class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300">
+                            <label for="stripe" class="ml-3 block text-sm font-medium text-gray-700">Stripe</label>
                         </div>
                     </div>
                 </div>

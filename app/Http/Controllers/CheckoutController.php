@@ -17,6 +17,8 @@ class CheckoutController extends Controller
 
     public function process(Request $request)
     {
+
+        dd($request);
         // Add your checkout logic here
         // Process payment, create order, etc.
         

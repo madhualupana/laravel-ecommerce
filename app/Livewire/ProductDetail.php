@@ -7,34 +7,17 @@ use App\Models\Product;
 
 use Gloudemans\Shoppingcart\Facades\Cart;
 
-class ProductCard extends Component
+class ProductDetail extends Component
 {
-    public $product;
-    public $showAddToCart = true;
+    public Product $product;
 
-    
-
-    public function mount($product, $showAddToCart = true)
+    public function mount(Product $product)
     {
-        // Handle both Product object and array input
-        $this->product = is_array($product) ? (object)$product : $product;
-        $this->showAddToCart = $showAddToCart;
+        $this->product = $product;
     }
 
     public function addToCart()
     {
-        // \Cart::add([
-        //     'id' => $this->product->id,
-        //     'name' => $this->product->name,
-        //     'price' => $this->product->price,
-        //     'qty' => 1,
-        //     'attributes' => [
-        //         'image' => $this->product->image,
-        //         'slug' => $this->product->slug,
-        //     ],
-        // ]);
-
-
         Cart::add([
             'id' => $this->product->id,
             'name' => $this->product->name,
@@ -44,7 +27,6 @@ class ProductCard extends Component
                 'image' => $this->product->image, // or your image path logic
             ]
         ]);
-
         $this->dispatch('cartUpdated');
         
         // Updated to use dispatch() instead of dispatchBrowserEvent()
@@ -57,6 +39,6 @@ class ProductCard extends Component
 
     public function render()
     {
-        return view('livewire.product-card');
+        return view('livewire.product-detail');
     }
 }
