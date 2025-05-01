@@ -48,4 +48,13 @@ class Product extends Model
         
         return asset('storage/' . ltrim($this->image, '/'));
     }
+
+    public function scopeSortBy($query, $sortOption)
+    {
+        if (array_key_exists($sortOption, config('products.sort_options'))) {
+            $option = config('products.sort_options')[$sortOption];
+            return $query->orderBy($option['field'], $option['direction']);
+        }
+        return $query;
+    }
 }

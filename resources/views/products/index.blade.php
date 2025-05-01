@@ -33,26 +33,91 @@
                     
                     <!-- Price Range -->
                     <div class="mb-6">
-                        <h4 class="font-medium mb-2">Price Range</h4>
-                        <div x-data="{ minPrice: {{ request()->min_price ?? $minPrice }}, maxPrice: {{ request()->max_price ?? $maxPrice }}, min: {{ $minPrice }}, max: {{ $maxPrice }} }" 
-                             class="space-y-4">
-                            <div class="flex items-center justify-between space-x-4">
-                                <input type="number" x-model="minPrice" @change.debounce="window.location.href = updateUrlParam('min_price', minPrice)" 
-                                       class="w-24 px-2 py-1 border rounded text-sm" min="{{ $minPrice }}" max="{{ $maxPrice }}">
-                                <span>to</span>
-                                <input type="number" x-model="maxPrice" @change.debounce="window.location.href = updateUrlParam('max_price', maxPrice)" 
-                                       class="w-24 px-2 py-1 border rounded text-sm" min="{{ $minPrice }}" max="{{ $maxPrice }}">
-                            </div>
-                            <div class="relative pt-1">
-                                <input type="range" x-model="minPrice" @change.debounce="window.location.href = updateUrlParam('min_price', minPrice)" 
-                                       class="absolute w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" 
-                                       min="{{ $minPrice }}" max="{{ $maxPrice }}" step="1">
-                                <input type="range" x-model="maxPrice" @change.debounce="window.location.href = updateUrlParam('max_price', maxPrice)" 
-                                       class="absolute w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" 
-                                       min="{{ $minPrice }}" max="{{ $maxPrice }}" step="1">
-                            </div>
-                        </div>
-                    </div>
+    <h4 class="font-medium mb-3 text-gray-700">Price Range</h4>
+    <div x-data="priceRangeFilter(
+        {{ $minPrice }}, 
+        {{ $maxPrice }}, 
+        {{ request()->min_price ?? 'null' }}, 
+        {{ request()->max_price ?? 'null' }}
+    )" class="space-y-5">
+        <!-- Range Slider - Improved Version -->
+        <div class="relative pt-6 pb-4 px-2">
+            <!-- Track Background -->
+            <div class="absolute h-2 w-full bg-gray-100 rounded-full top-1/2 -translate-y-1/2"></div>
+            
+            <!-- Active Range -->
+            <div class="absolute h-2 bg-primary-500 rounded-full top-1/2 -translate-y-1/2" 
+                 :style="`left: ${minPercent}%; width: ${maxPercent - minPercent}%`"></div>
+            
+            <!-- Price Labels -->
+            <div class="flex justify-between text-xs text-gray-500 mb-1">
+                <span x-text="formatCurrency(absoluteMin)"></span>
+                <span x-text="formatCurrency(absoluteMax)"></span>
+            </div>
+            
+            <!-- Thumb for Min Price -->
+            <input type="range" 
+                   x-model="currentMinPrice" 
+                   @input.debounce.500ms="updateMinPrice"
+                   :min="absoluteMin" 
+                   :max="absoluteMax" 
+                   class="absolute w-full h-3 opacity-0 cursor-pointer z-20 top-6">
+            
+            <!-- Thumb for Max Price -->
+            <input type="range" 
+                   x-model="currentMaxPrice" 
+                   @input.debounce.500ms="updateMaxPrice"
+                   :min="absoluteMin" 
+                   :max="absoluteMax" 
+                   class="absolute w-full h-3 opacity-0 cursor-pointer z-20 top-6">
+            
+            <!-- Visual Thumbs - Improved -->
+            <div class="absolute h-5 w-5 bg-white border-2 border-primary-500 rounded-full shadow-md top-1/2 -translate-y-1/2 z-10 transform hover:scale-125 transition-transform"
+                 :style="`left: ${minPercent}%`"
+                 @mousedown="activeThumb = 'min'">
+                <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap"
+                     x-text="formatCurrency(currentMinPrice)"
+                     x-show="activeThumb === 'min'"></div>
+            </div>
+            <div class="absolute h-5 w-5 bg-white border-2 border-primary-500 rounded-full shadow-md top-1/2 -translate-y-1/2 z-10 transform hover:scale-125 transition-transform"
+                 :style="`left: ${maxPercent}%`"
+                 @mousedown="activeThumb = 'max'">
+                <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap"
+                     x-text="formatCurrency(currentMaxPrice)"
+                     x-show="activeThumb === 'max'"></div>
+            </div>
+        </div>
+        
+        <!-- Number Inputs - Improved -->
+        <div class="flex items-center justify-between space-x-4">
+            <div class="relative flex-1">
+                <label class="block text-xs text-gray-500 mb-1">Min</label>
+                <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                    <input type="number" 
+                           x-model="currentMinPrice" 
+                           @change.debounce.500ms="updateMinPrice"
+                           :min="absoluteMin" 
+                           :max="currentMaxPrice" 
+                           class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                </div>
+            </div>
+            <div class="pt-6 text-gray-400">to</div>
+            <div class="relative flex-1">
+                <label class="block text-xs text-gray-500 mb-1">Max</label>
+                <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                    <input type="number" 
+                           x-model="currentMaxPrice" 
+                           @change.debounce.500ms="updateMaxPrice"
+                           :min="currentMinPrice" 
+                           :max="absoluteMax" 
+                           class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
                     
                     <!-- Clear Filters -->
                     @if(request()->has('category') || request()->has('min_price') || request()->has('max_price') || request()->has('search'))
@@ -69,28 +134,27 @@
                 <div class="bg-white rounded-lg shadow-md p-4 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div class="w-full md:w-auto">
                         <div class="relative">
-                            <input type="text" placeholder="Search products..." 
-                                   value="{{ request()->search }}" 
-                                   class="w-full md:w-64 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                                   x-data
-                                   @input.debounce.500ms="window.location.href = '{{ route('products.index', request()->except('search')) }}' + (value ? '&search=' + encodeURIComponent(value) : '')">
-                            <svg class="absolute right-3 top-3 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
+                            
                         </div>
                     </div>
                     
                     <div class="flex items-center space-x-2">
-                        <span class="text-sm text-gray-600">Sort by:</span>
-                        <select class="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                                x-data
-                                @change="window.location.href = '{{ route('products.index', request()->except('sort')) }}' + '&sort=' + $event.target.value">
-                            <option value="latest" {{ request()->sort == 'latest' ? 'selected' : '' }}>Latest</option>
-                            <option value="price_asc" {{ request()->sort == 'price_asc' ? 'selected' : '' }}>Price: Low to High</option>
-                            <option value="price_desc" {{ request()->sort == 'price_desc' ? 'selected' : '' }}>Price: High to Low</option>
-                            <option value="rating" {{ request()->sort == 'rating' ? 'selected' : '' }}>Top Rated</option>
-                        </select>
-                    </div>
+    <span class="text-sm text-gray-600">Sort by:</span>
+    <select 
+        class="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
+        x-data
+        @change="window.location.href = updateUrlWithSort($event.target.value)"
+    >
+        @foreach($sortOptions as $value => $option)
+            <option 
+                value="{{ $value }}" 
+                {{ $currentSort == $value ? 'selected' : '' }}
+            >
+                {{ $option['label'] }}
+            </option>
+        @endforeach
+    </select>
+</div>
                 </div>
                 
                 <!-- Products Grid -->
@@ -126,4 +190,127 @@
             </div>
         </div>
     </div>
+
+    <script>
+
+document.addEventListener('alpine:init', () => {
+    Alpine.data('priceRangeFilter', (absoluteMin, absoluteMax, initialMin, initialMax) => ({
+        absoluteMin,
+        absoluteMax,
+        currentMinPrice: initialMin || absoluteMin,
+        currentMaxPrice: initialMax || absoluteMax,
+        activeThumb: null,
+        
+        init() {
+            // Handle mouseup globally to deactivate thumb
+            document.addEventListener('mouseup', () => {
+                this.activeThumb = null;
+            });
+            
+            // Handle mousemove for dragging thumbs
+            document.addEventListener('mousemove', (e) => {
+                if (!this.activeThumb) return;
+                
+                const slider = this.$el.querySelector('.relative');
+                const rect = slider.getBoundingClientRect();
+                const percent = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+                const value = Math.round(this.absoluteMin + percent * (this.absoluteMax - this.absoluteMin));
+                
+                if (this.activeThumb === 'min') {
+                    this.currentMinPrice = Math.min(value, this.currentMaxPrice);
+                } else {
+                    this.currentMaxPrice = Math.max(value, this.currentMinPrice);
+                }
+                
+                this.updateUrl(this.activeThumb === 'min' ? 'min_price' : 'max_price', 
+                              this.activeThumb === 'min' ? this.currentMinPrice : this.currentMaxPrice);
+            });
+        },
+        
+        get minPercent() {
+            return ((this.currentMinPrice - this.absoluteMin) / (this.absoluteMax - this.absoluteMin)) * 100;
+        },
+        
+        get maxPercent() {
+            return ((this.currentMaxPrice - this.absoluteMin) / (this.absoluteMax - this.absoluteMin)) * 100;
+        },
+        
+        formatCurrency(value) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(value);
+        },
+        
+        updateMinPrice() {
+            this.currentMinPrice = Math.max(this.absoluteMin, 
+                                          Math.min(this.currentMaxPrice, 
+                                                 parseInt(this.currentMinPrice) || this.absoluteMin));
+            this.updateUrl('min_price', this.currentMinPrice);
+        },
+        
+        updateMaxPrice() {
+            this.currentMaxPrice = Math.min(this.absoluteMax, 
+                                          Math.max(this.currentMinPrice, 
+                                                 parseInt(this.currentMaxPrice) || this.absoluteMax));
+            this.updateUrl('max_price', this.currentMaxPrice);
+        },
+        
+        updateUrl(param, value) {
+            const url = new URL(window.location.href);
+            const params = new URLSearchParams(url.search);
+            
+            params.delete('page');
+            
+            if ((param === 'min_price' && value === this.absoluteMin) || 
+                (param === 'max_price' && value === this.absoluteMax)) {
+                params.delete(param);
+            } else {
+                params.set(param, value);
+            }
+            
+            window.location.href = `${url.pathname}?${params.toString()}`;
+        }
+    }));
+});
+
+
+
+     function updateUrlWithSort(sortValue) {
+        const url = new URL(window.location.href);
+        const params = new URLSearchParams(url.search);
+        
+        // Remove existing sort parameter
+        params.delete('sort');
+        
+        // Add new sort parameter if not default
+        if (sortValue && sortValue !== 'latest') {
+            params.append('sort', sortValue);
+        }
+        
+        // Reset to page 1 when changing sort
+        params.delete('page');
+        
+        return `${url.pathname}?${params.toString()}`;
+    }
+    
+    // Also update your price range function to be consistent
+    function updateUrlParam(key, value) {
+        const url = new URL(window.location.href);
+        const params = new URLSearchParams(url.search);
+        
+        if (value) {
+            params.set(key, value);
+        } else {
+            params.delete(key);
+        }
+        
+        // Reset to page 1 when changing filters
+        params.delete('page');
+        
+        return `${url.pathname}?${params.toString()}`;
+    }
+</script>
 @endsection
