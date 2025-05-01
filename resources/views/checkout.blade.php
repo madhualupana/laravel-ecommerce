@@ -5,7 +5,11 @@
 @section('content')
 <div class="container mx-auto px-4 py-8">
     <h1 class="text-2xl font-bold mb-6">Checkout</h1>
-    
+    @if(session('error'))
+    <div class="alert alert-danger">
+        {{ session('error') }}
+    </div>
+@endif
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Order Summary -->
         <div class="lg:col-span-2">

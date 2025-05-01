@@ -9,19 +9,24 @@ class SearchResults extends Component
 {
     public $search;
 
+    protected $queryString = ['search'];
+
     public function render()
     {
-        $results = [];
-
-        if (strlen($this->search) >= 2) {
-            $results = Product::where('name', 'like', '%' . $this->search . '%')
-                ->where('is_active', true)
-                ->take(5)
-                ->get();
+        if(strlen($this->search) < 2) {
+            return view('livewire.search-results', [
+                'results' => collect()
+            ]);
         }
 
+        $results = Product::query()
+            ->where('name', 'like', '%'.$this->search.'%')
+            ->orWhere('description', 'like', '%'.$this->search.'%')
+            ->limit(5)
+            ->get();
+
         return view('livewire.search-results', [
-            'results' => $results,
+            'results' => $results
         ]);
     }
 }

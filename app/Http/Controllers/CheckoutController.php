@@ -151,48 +151,50 @@ class CheckoutController extends Controller
     }
 }
     
-    public function paypalSuccess(Request $request)
-    {
-        try {
-            if (!$request->has('token')) {
-                throw new \Exception('Missing payment token');
-            }
-    
-            $provider = new PayPalClient;
-            $provider->setApiCredentials(config('services.paypal'));
-            $token = $provider->getAccessToken();
-            $provider->setAccessToken($token);
-    
-            $response = $provider->capturePaymentOrder($request->token);
-    
-            if (isset($response['error'])) {
-                throw new \Exception($response['error']['message'] ?? 'PayPal API error');
-            }
-    
-            if (isset($response['status']) && $response['status'] === 'COMPLETED') {
-                $orderId = str_replace('order_', '', $response['purchase_units'][0]['reference_id']);
-                $order = Order::find($orderId);
-                
-                if (!$order) {
-                    throw new \Exception('Order not found');
-                }
-    
-                $order->update([
-                    'status' => 'completed',
-                    'transaction_id' => $response['id']
-                ]);
-                
-                Cart::destroy();
-                return redirect()->route('checkout.success')->with('order', $order);
-            }
-    
-            throw new \Exception('Payment not completed: ' . ($response['status'] ?? 'unknown status'));
-    
-        } catch (\Exception $e) {
-            return redirect()->route('checkout')
-                ->with('error', 'Payment failed: ' . $e->getMessage());
+public function paypalSuccess(Request $request)
+{
+    try {
+        if (!$request->token) {
+            throw new \Exception('Payment token missing');
         }
+
+        $provider = new PayPalClient;
+        $provider->setApiCredentials(config('services.paypal'));
+        $provider->getAccessToken();
+
+        // 1. First check order status
+        $orderDetails = $provider->showOrderDetails($request->token);
+
+        if ($orderDetails['status'] !== 'APPROVED') {
+            throw new \Exception('Order not approved for capture');
+        }
+
+        // 2. Capture payment - CORRECT METHOD NAME
+        $response = $provider->capturePaymentOrder($request->token);
+
+        // 3. Verify capture succeeded
+        if (!isset($response['status']) || $response['status'] !== 'COMPLETED') {
+            throw new \Exception('Capture failed: '.json_encode($response));
+        }
+
+        // 4. Process successful payment
+        $orderId = str_replace('order_', '', $response['purchase_units'][0]['reference_id']);
+        $order = Order::findOrFail($orderId);
+        
+        $order->update([
+            'status' => 'completed',
+            'transaction_id' => $response['id']
+        ]);
+        
+        Cart::destroy();
+        return redirect()->route('checkout.success')->with('order', $order);
+
+    } catch (\Exception $e) {
+        logger()->error('PAYPAL ERROR: '.$e->getMessage());
+        return redirect()->route('checkout')
+            ->with('error', 'Payment failed: '.$e->getMessage());
     }
+}
 
     public function paypalCancel()
     {
