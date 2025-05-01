@@ -30,13 +30,18 @@ cp .env.example .env
 php artisan key:generate
 ```
 
-### 4️⃣ Run Migrations (Optional)
+### 4️⃣ Run Migrations
 
 ```bash
 php artisan migrate
 ```
+### 5️⃣ Seed the Database
 
-### 5️⃣ Run the Application
+```bash
+php artisan db:seed
+```
+
+### 6️⃣ Run the Application
 
 ```bash
 npm run dev
