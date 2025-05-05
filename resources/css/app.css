@@ -61,3 +61,17 @@
 .prose p {
     margin-bottom: 1rem;
 }
+
+/* Order status badges */
+.badge.bg-success { background-color: #28a745; }
+.badge.bg-primary { background-color: #007bff; }
+.badge.bg-warning { background-color: #ffc107; color: #212529; }
+.badge.bg-danger { background-color: #dc3545; }
+
+/* Order items */
+.img-thumbnail {
+    padding: 0.25rem;
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+}

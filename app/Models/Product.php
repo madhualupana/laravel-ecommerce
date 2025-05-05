@@ -20,7 +20,16 @@ class Product extends Model
         'is_featured' => 'boolean',
         'is_active' => 'boolean',
         'in_stock' => 'boolean',
+        'images' => 'array',
+        'specifications' => 'array',
     ];
+
+    public function getGalleryUrlsAttribute()
+    {
+        return collect($this->gallery)->map(function ($image) {
+            return asset('storage/'.$image);
+        });
+    }
 
     public function category()
     {

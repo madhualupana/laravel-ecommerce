@@ -1,3 +1,4 @@
+<!-- C:\laragon\www\laravel-ecommerce\resources\views\products\show.blade.php -->
 @extends('layouts.app')
 
 @section('title', $product->name)

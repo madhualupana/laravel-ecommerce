@@ -1,13 +1,10 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\HomeController;
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\CategoryController;
+use App\Livewire\CategoryShow;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CheckoutController;
-use App\Http\Controllers\OrderController;
-use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Livewire\Auth\Login;
@@ -16,6 +13,8 @@ use App\Livewire\Auth\Passwords\Email;
 use App\Livewire\Auth\Passwords\Reset;
 use App\Livewire\Auth\Register;
 use App\Livewire\Auth\Verify;
+use App\Livewire\ProductShow;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -24,8 +23,8 @@ use App\Livewire\Auth\Verify;
 */
 
 // Public Routes
-Route::get('/', [HomeController::class, 'index'])->name('home');
-Route::get('/home', [HomeController::class, 'index'])->name('home');
+
+Route::get('/', \App\Livewire\HomePage::class)->name('home');
 
 // Auth Routes (Guest Only)
 Route::middleware('guest')->group(function () {
@@ -43,12 +42,17 @@ Route::middleware('auth')->group(function () {
     Route::post('logout', LogoutController::class)->name('logout');
 });
 
+
 // Product Routes
-Route::get('/product', [ProductController::class, 'index'])->name('products.index');
-Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
+Route::get('/product', \App\Livewire\ProductsIndex::class)->name('products.index');
+ Route::get('/products/{product}', ProductShow::class)->name('products.show');
+
+// Product Routes
+// Route::get('/product', [ProductController::class, 'index'])->name('products.index');
+ //Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
 
 // Category Routes
-Route::get('/categories/{category}', [CategoryController::class, 'show'])->name('categories.show');
+Route::get('/categories/{category}', CategoryShow::class)->name('categories.show');
 
 // Cart Routes
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
@@ -64,17 +68,14 @@ Route::middleware('auth')->group(function () {
 Route::get('/checkout/success', [CheckoutController::class, 'success'])
     ->name('checkout.success');
 
-Route::middleware('auth')->group(function () {
-        Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
-    });
-
-Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+Route::middleware('auth')->get('/orders', \App\Livewire\Orders::class)->name('orders.index');
+Route::middleware('auth')->get('/orders/{order}', \App\Livewire\OrderShow::class)->name('orders.show');
 
 // PayPal Routes
 Route::get('/paypal/success', [CheckoutController::class, 'paypalSuccess'])->name('checkout.paypal.success');
 Route::get('/paypal/cancel', [CheckoutController::class, 'paypalCancel'])->name('checkout.paypal.cancel');
 
-Route::middleware('auth')->get('/profile', [ProfileController::class, 'show'])->name('profile');
+Route::middleware('auth')->get('/profile', \App\Livewire\Profile::class)->name('profile');
 // Optional default auth routes (if you're still using Laravel UI)
 Auth::routes();
 
