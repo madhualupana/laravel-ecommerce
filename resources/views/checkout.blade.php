@@ -9,7 +9,7 @@
     <div class="alert alert-danger">
         {{ session('error') }}
     </div>
-@endif
+    @endif
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Order Summary -->
         <div class="lg:col-span-2">
@@ -21,8 +21,7 @@
                 <div class="mt-6 border-t border-gray-200 pt-4">
                     <h3 class="text-lg font-medium mb-2">Payment Method</h3>
                     <div class="space-y-3">
-
-                    <div class="flex items-center">
+                        <div class="flex items-center">
                             <input checked id="cod" name="payment_method" type="radio" value="cod" 
                                    class="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300">
                             <label for="cod" class="ml-3 block text-sm font-medium text-gray-700">
@@ -34,8 +33,21 @@
                                 </span>
                             </label>
                         </div>
+
+                        <div class="flex items-center">
+                            <input id="razorpay" name="payment_method" type="radio" value="razorpay" 
+                                   class="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300">
+                            <label for="razorpay" class="ml-3 block text-sm font-medium text-gray-700">
+                                <span class="flex items-center">
+                                    <svg class="h-6 w-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                    </svg>
+                                    Razorpay
+                                </span>
+                            </label>
+                        </div>
                         
-                    <div class="flex items-center">
+                        <div class="flex items-center">
                             <input id="stripe" name="payment_method" type="radio" value="stripe" 
                                    class="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300">
                             <label for="stripe" class="ml-3 block text-sm font-medium text-gray-700">
@@ -114,112 +126,195 @@
         </div>
     </div>
 </div>
+
 @push('scripts')
     <!-- Stripe JS -->
     <script src="https://js.stripe.com/v3/"></script>
+    <!-- Razorpay JS -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    
     <script>
-    const stripe = Stripe('{{ $stripeKey }}');
-    const elements = stripe.elements();
-    const cardElement = elements.create('card');
-    
-    // Initialize with first payment method selected
-    const initialPaymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
-    document.getElementById('payment_method').value = initialPaymentMethod;
-    
-    // Handle payment method selection
-    document.querySelectorAll('input[name="payment_method"]').forEach(el => {
-        el.addEventListener('change', function() {
-            const selectedMethod = this.value;
-            document.getElementById('payment_method').value = selectedMethod;
+        const stripe = Stripe('{{ $stripeKey }}');
+        const elements = stripe.elements();
+        const cardElement = elements.create('card');
+        
+        // Initialize with first payment method selected
+        const initialPaymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
+        document.getElementById('payment_method').value = initialPaymentMethod;
+        
+        // Handle payment method selection
+        document.querySelectorAll('input[name="payment_method"]').forEach(el => {
+            el.addEventListener('change', function() {
+                const selectedMethod = this.value;
+                document.getElementById('payment_method').value = selectedMethod;
+                
+                if (selectedMethod === 'stripe') {
+                    document.getElementById('stripe-element').classList.remove('hidden');
+                    try {
+                        cardElement.mount('#card-element');
+                    } catch(e) {
+                        console.error('Stripe element already mounted');
+                    }
+                } else {
+                    document.getElementById('stripe-element').classList.add('hidden');
+                    try {
+                        cardElement.unmount();
+                    } catch(e) {
+                        console.error('Stripe element not mounted');
+                    }
+                }
+            });
+        });
+        
+        // Handle Razorpay payment
+        async function handleRazorpayPayment(orderData) {
+            const options = {
+                "key": "{{ config('services.razorpay.key') }}",
+                "amount": orderData.amount * 100, // Razorpay expects amount in paise
+                "currency": "INR",
+                "name": "{{ config('app.name') }}",
+                "description": "Order Payment",
+                "order_id": orderData.razorpay_order_id,
+                "handler": function (response) {
+                    // Submit form with Razorpay response
+                    const form = document.getElementById('checkout-form');
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'razorpay_payment_id';
+                    input.value = response.razorpay_payment_id;
+                    form.appendChild(input);
+                    
+                    const orderInput = document.createElement('input');
+                    orderInput.type = 'hidden';
+                    orderInput.name = 'razorpay_order_id';
+                    orderInput.value = orderData.razorpay_order_id;
+                    form.appendChild(orderInput);
+                    
+                    const signatureInput = document.createElement('input');
+                    signatureInput.type = 'hidden';
+                    signatureInput.name = 'razorpay_signature';
+                    signatureInput.value = response.razorpay_signature;
+                    form.appendChild(signatureInput);
+                    
+                    form.submit();
+                },
+                "prefill": {
+                    "name": document.getElementById('name').value,
+                    "email": "{{ auth()->user() ? auth()->user()->email : '' }}",
+                    "contact": "" // You can add phone field to your form
+                },
+                "notes": {
+                    "address": document.getElementById('address').value
+                },
+                "theme": {
+                    "color": "#F37254"
+                }
+            };
             
-            if (selectedMethod === 'stripe') {
-                document.getElementById('stripe-element').classList.remove('hidden');
-                try {
-                    cardElement.mount('#card-element');
-                } catch(e) {
-                    console.error('Stripe element already mounted');
-                }
-            } else {
-                document.getElementById('stripe-element').classList.add('hidden');
-                try {
-                    cardElement.unmount();
-                } catch(e) {
-                    console.error('Stripe element not mounted');
-                }
-            }
-        });
-    });
-    
-    // Handle form submission
-    const form = document.getElementById('checkout-form');
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const submitBtn = document.getElementById('submit-btn');
-        const originalBtnText = submitBtn.innerHTML;
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Processing...';
-        
-        const paymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
-        
-        // Validate form
-        const requiredFields = ['name', 'address', 'city', 'zip'];
-        let isValid = true;
-        
-        requiredFields.forEach(field => {
-            const element = document.getElementById(field);
-            if (!element.value.trim()) {
-                element.classList.add('border-red-500');
-                isValid = false;
-            } else {
-                element.classList.remove('border-red-500');
-            }
-        });
-        
-        if (!isValid) {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = originalBtnText;
-            return;
+            const rzp = new Razorpay(options);
+            rzp.open();
         }
-        
-        if (paymentMethod === 'stripe') {
-            try {
-                const {paymentIntent, error} = await stripe.confirmCardPayment(
-                    '{{ $clientSecret }}', {
-                        payment_method: {
-                            card: cardElement,
-                            billing_details: {
-                                name: document.getElementById('name').value,
-                                address: {
-                                    line1: document.getElementById('address').value,
-                                    city: document.getElementById('city').value,
-                                    postal_code: document.getElementById('zip').value
+
+        // Handle form submission
+        const form = document.getElementById('checkout-form');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submit-btn');
+            const originalBtnText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Processing...';
+            
+            const paymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
+            
+            // Validate form
+            const requiredFields = ['name', 'address', 'city', 'zip'];
+            let isValid = true;
+            
+            requiredFields.forEach(field => {
+                const element = document.getElementById(field);
+                if (!element.value.trim()) {
+                    element.classList.add('border-red-500');
+                    isValid = false;
+                } else {
+                    element.classList.remove('border-red-500');
+                }
+            });
+            
+            if (!isValid) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+                return;
+            }
+            
+            if (paymentMethod === 'razorpay') {
+                try {
+                    // Create order on your server first
+                    const response = await fetch('{{ route("razorpay.order.create") }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({
+                            amount: {{ (float) str_replace(['$', ','], '', Cart::total()) }},
+                            currency: 'INR'
+                        })
+                    });
+                    
+                    const orderData = await response.json();
+                    
+                    if (orderData.error) {
+                        throw new Error(orderData.error);
+                    }
+                    
+                    // Handle Razorpay payment
+                    await handleRazorpayPayment(orderData);
+                    
+                } catch (err) {
+                    console.error('Razorpay error:', err);
+                    alert('Payment processing failed: ' + err.message);
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnText;
+                }
+            } else if (paymentMethod === 'stripe') {
+                try {
+                    const {paymentIntent, error} = await stripe.confirmCardPayment(
+                        '{{ $clientSecret }}', {
+                            payment_method: {
+                                card: cardElement,
+                                billing_details: {
+                                    name: document.getElementById('name').value,
+                                    address: {
+                                        line1: document.getElementById('address').value,
+                                        city: document.getElementById('city').value,
+                                        postal_code: document.getElementById('zip').value
+                                    }
                                 }
                             }
                         }
+                    );
+                    
+                    if (error) {
+                        document.getElementById('card-errors').textContent = error.message;
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalBtnText;
+                    } else {
+                        document.getElementById('payment_intent').value = paymentIntent.id;
+                        // Submit the form normally after Stripe confirmation
+                        form.submit();
                     }
-                );
-                
-                if (error) {
-                    document.getElementById('card-errors').textContent = error.message;
+                } catch (err) {
+                    console.error('Stripe error:', err);
+                    document.getElementById('card-errors').textContent = 'Payment processing failed. Please try again.';
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = originalBtnText;
-                } else {
-                    document.getElementById('payment_intent').value = paymentIntent.id;
-                    // Submit the form normally after Stripe confirmation
-                    form.submit();
                 }
-            } catch (err) {
-                console.error('Stripe error:', err);
-                document.getElementById('card-errors').textContent = 'Payment processing failed. Please try again.';
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalBtnText;
+            } else {
+                // For COD or PayPal, submit the form normally
+                form.submit();
             }
-        } else {
-            // For COD or PayPal, submit the form normally
-            form.submit();
-        }
-    });
-</script>
+        });
+    </script>
 @endpush
 @endsection

@@ -1,0 +1,7 @@
+// Custom variables (if you have any)
+@use 'variables';
+
+// Bootstrap with configuration
+@use 'bootstrap/scss/bootstrap' with (
+  $primary: #0d6efd, // Example Bootstrap primary color
+);

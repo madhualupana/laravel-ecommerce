@@ -18,6 +18,8 @@ class Order extends Model
         'total',
         'payment_method',
         'transaction_id',
+        'payment_status',
+        'razorpay_order_id',
         'status'
     ];
 

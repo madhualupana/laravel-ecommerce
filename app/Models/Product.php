@@ -36,6 +36,11 @@ class Product extends Model
         return $this->belongsTo(Category::class);
     }
 
+    public function wishlistedBy()
+    {
+        return $this->hasMany(Wishlist::class);
+    }
+
     public function getRouteKeyName()
     {
         return 'slug';

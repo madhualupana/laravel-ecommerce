@@ -68,25 +68,25 @@
 
                 <!-- Quantity Selector -->
                 <div class="flex items-center mb-6">
-                    <span class="mr-4 text-gray-700">Quantity:</span>
-                    <div class="flex items-center border border-gray-300 rounded-md">
-                        <button 
-                            wire:click="decreaseQuantity"
-                            class="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-l-md"
-                            :disabled="quantity <= 1"
-                        >
-                            -
-                        </button>
-                        <span class="px-4 py-1 bg-white text-center w-12">{{ $quantity }}</span>
-                        <button 
-                            wire:click="increaseQuantity"
-                            class="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-r-md"
-                            :disabled="quantity >= 10"
-                        >
-                            +
-                        </button>
-                    </div>
-                </div>
+    <span class="mr-4 text-gray-700">Quantity:</span>
+    <div class="flex items-center border border-gray-300 rounded-md">
+        <button 
+            wire:click="decreaseQuantity"
+            class="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-l-md"
+            :disabled="quantity <= 1"
+        >
+            -
+        </button>
+        <span class="px-4 py-1 bg-white text-center w-12">{{ $quantity }}</span>
+        <button 
+            wire:click="increaseQuantity"
+            class="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-r-md"
+            :disabled="quantity >= 10"
+        >
+            +
+        </button>
+    </div>
+</div>
 
                 <!-- Add to Cart Button -->
                 <button 
@@ -100,11 +100,15 @@
                 <button 
                     wire:click="toggleWishlist"
                     class="w-full border border-gray-300 hover:bg-gray-100 text-gray-700 font-bold py-3 px-4 rounded-md transition-colors flex items-center justify-center"
+                    :class="{ 'bg-gray-100': isInWishlist }"
                 >
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-5 h-5 mr-2" 
+                        fill="{{ $isInWishlist ? 'currentColor' : 'none' }}" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                     </svg>
-                    Add to Wishlist
+                    {{ $isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist' }}
                 </button>
             </div>
         </div>

@@ -21,6 +21,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role', // Add this
     ];
 
     /**
@@ -46,5 +47,21 @@ class User extends Authenticatable
     public function orders()
     {
         return $this->hasMany(Order::class);
+    }
+
+    public function wishlistItems()
+    {
+        return $this->hasMany(Wishlist::class);
+    }
+
+    // Add these methods
+    public function isAdmin()
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isCustomer()
+    {
+        return $this->role === 'customer';
     }
 }

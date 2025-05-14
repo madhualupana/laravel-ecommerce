@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('city');
             $table->string('zip', 20);
             $table->decimal('total', 10, 2);
-            $table->enum('payment_method', ['cod', 'stripe', 'paypal']);
+            $table->enum('payment_method', ['cod', 'stripe', 'paypal', 'razorpay']);
             $table->string('transaction_id')->nullable();
             $table->enum('status', ['pending', 'processing', 'completed', 'cancelled'])->default('pending');
             $table->timestamps();
